@@ -37,9 +37,11 @@ import Prelude hiding ((^), (<*>), (+))
 
 newtype IOChan s m = IOChan (Chan Int)
 
-type instance Mon (ST s) = IOChan s
+data STC s
 
-instance GV ST (RM IO)
+type instance Mon (STC s) = IOChan s
+
+instance GV STC (RM IO)
     where send (RM mv) (RM mc) =
               RM (do v <- mv
                      IOChan c <- mc
@@ -82,7 +84,7 @@ newtype IOAP s m = IOAP (MVar (APState s))
 
 type instance Mon (AP s) = IOAP s
 
-instance GVX AP ST (RM IO)
+instance GVX AP STC (RM IO)
     where amb l r =
               RM (do b <- getStdRandom (randomR (False,True))
                      if b then unRM l else unRM r)

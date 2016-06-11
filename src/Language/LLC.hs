@@ -79,7 +79,7 @@ class LLC (repr :: Nat
     -> repr vid (Or tf1 tf2) i o b
 
   bang
-    :: repr vid tf '[] '[] a
+    :: repr vid tf i i a
     -> repr vid False i i (Bang a)
   letBang
     :: repr vid tf0 i h (Bang a)
@@ -91,7 +91,7 @@ class LLC (repr :: Nat
     -> repr vid tf i o (a ->> b)
   ($$)
     :: repr vid tf0 i o (a ->> b)
-    -> repr vid tf1 '[] '[] a
+    -> repr vid tf1 o o a
     -> repr vid tf0 i o b
 
   top
@@ -119,9 +119,9 @@ class LLC (repr :: Nat
     -> repr vid (Or tf0 tf1) i o a
 
   (<*>)
-    :: repr vid tf i h a
-    -> repr vid tf h o b
-    -> repr vid tf i o (a * b)
+    :: repr vid tf0 i h a
+    -> repr vid tf1 h o b
+    -> repr vid (Or tf0 tf1) i o (a * b)
   letStar
     :: ( VarOk tf1 var0
        , VarOk tf1 var1

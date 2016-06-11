@@ -27,6 +27,8 @@ import Language.PolGV.CPS
 
 import Control.Monad.Cont
 
+import GVexamples
+
 -- representation for polarisation
 newtype RP (os :: * -> *) (is :: * -> *)
            (repr :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *)
@@ -156,6 +158,28 @@ type instance ISToI (t <?> s)    = t S.<?> SToI s
 type instance ISToI EndIn        = S.EndIn
 type instance ISToI (s1 <&&> s2) = SToI s1 S.<&&> SToI s2
 
+instance LLC repr => LLC (RP os is repr) where
+    llam f         = RP (llam (\x -> unRP (f (RP x))))
+    f ^ x          = RP (unRP f ^ unRP x)
+    bang x         = RP (bang (unRP x))
+    letBang x f    = RP (letBang (unRP x) (\x -> unRP (f (RP x))))
+    ulam f         = RP (ulam (\x -> unRP (f (RP x))))
+    f $$ x         = RP (unRP f $$ unRP x)
+    x <*> y        = RP (unRP x <*> unRP y)
+    letStar xy f   = RP (letStar (unRP xy) (\x y -> unRP (f (RP x) (RP y))))
+    one            = RP one
+    letOne x y     = RP (letOne (unRP x) (unRP y))
+    top            = RP top
+    x & y          = RP (unRP x & unRP y)
+    pi1 x          = RP (pi1 (unRP x))
+    pi2 x          = RP (pi2 (unRP x))
+    inl x          = RP (inl (unRP x))
+    inr x          = RP (inr (unRP x))
+    letPlus xy f g = RP (letPlus (unRP xy) (\x -> unRP (f (RP x))) (\y -> unRP (g (RP y))))
+    abort x        = RP (abort (unRP x))
+    constant x     = RP (constant x)
+    f $$$ x        = RP (unRP f $$$ unRP x)
+
 instance (LLC repr, P.GV os is repr, Conv repr) => GV (STP os is) (RP os is repr) where
   send (RP m)
        (RP (n :: (P.GV os is repr, Conv repr) =>
@@ -195,8 +219,8 @@ instance (LLC repr, P.GV os is repr, Conv repr) => GV (STP os is) (RP os is repr
       (DualTrans, DualTrans) ->
         RP (P.offer m' n1' n2')
 
-evalPol :: (LLC repr, P.GV os is repr, Conv repr) => RP os is repr vid tf i o a -> repr vid tf i o a
+evalPol :: (LLC repr, P.GV os is repr, Conv repr) => RP os is repr vid tf '[] '[] a -> repr vid tf '[] '[] a
 evalPol (RP m) = m
 
-evalPolCont :: RP OST IST (RM (Cont r)) vid tf i o a -> RM (Cont r) vid tf i o a
+evalPolCont :: RP OST IST (RM (Cont r)) vid tf '[] '[] a -> RM (Cont r) vid tf '[] '[] a
 evalPolCont = evalPol
