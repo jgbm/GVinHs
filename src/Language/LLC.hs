@@ -65,9 +65,9 @@ class LLC (repr :: Bool
   llam
     :: (VarOk tf var, v ~ Length i, v ~ Length o)
     => (LVar repr v a -> repr tf
-                                (Just v ': i)
-                                (var ': o)
-                                b
+                              (Just v ': i)
+                              (var ': o)
+                              b
        )
     -> repr tf i o (a -<> b)
   (^)
@@ -76,7 +76,7 @@ class LLC (repr :: Bool
     -> repr (Or tf1 tf2) i o b
 
   bang
-    :: repr tf '[] '[] a
+    :: repr tf i i a
     -> repr False i i (Bang a)
   letBang
     :: repr tf0 i h (Bang a)
@@ -88,7 +88,7 @@ class LLC (repr :: Bool
     -> repr tf i o (a ->> b)
   ($$)
     :: repr tf0 i o (a ->> b)
-    -> repr tf1 '[] '[] a
+    -> repr tf1 o o a
     -> repr tf0 i o b
 
   top
@@ -123,7 +123,8 @@ class LLC (repr :: Bool
     :: ( VarOk tf1 var0
        , VarOk tf1 var1
        , v ~ Length i
-       , v ~ Length o
+-- breaks POLGV.hs as it doesn't know that Length i ~ Length o         
+--       , v ~ Length o
        )
     => repr tf0 i h (a * b)
     -> (LVar repr v a
