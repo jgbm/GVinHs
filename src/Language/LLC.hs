@@ -119,9 +119,9 @@ class LLC (repr :: Nat
     -> repr vid (Or tf0 tf1) i o a
 
   (<*>)
-    :: repr vid tf i h a
-    -> repr vid tf h o b
-    -> repr vid tf i o (a * b)
+    :: repr vid tf0 i h a
+    -> repr vid tf1 h o b
+    -> repr vid (Or tf0 tf1) i o (a * b)
   letStar
     :: ( VarOk tf1 var0
        , VarOk tf1 var1
