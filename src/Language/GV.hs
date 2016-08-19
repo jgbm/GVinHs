@@ -52,29 +52,29 @@ instance (Session s1, Session s2) => Session (s1 <&&> s2) where
 type DualSession (s :: *) = (Session s, Session (Dual s))
 
 class GV (st :: * -> *) (repr :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) | repr -> st where
-  send :: DualSession s => repr vid tf i h t -> repr vid tf h o (st (t <!> s)) -> repr vid tf i o (st s)
-  recv :: DualSession s => repr vid tf i o (st (t <?> s)) ->                      repr vid tf i o (t * st s)
-  wait :: repr vid tf i o (st EndIn) ->                                           repr vid tf i o One
-  fork :: DualSession s => repr vid tf i o (st s -<> st EndOut) ->                repr vid tf i o (st (Dual s))
+  send :: DualSession s => repr v tf i h t -> repr v tf h o (st (t <!> s)) -> repr v tf i o (st s)
+  recv :: DualSession s => repr v tf i o (st (t <?> s)) ->                    repr v tf i o (t * st s)
+  wait :: repr v tf i o (st EndIn) ->                                         repr v tf i o One
+  fork :: DualSession s => repr v tf i o (st s -<> st EndOut) ->              repr v tf i o (st (Dual s))
   chooseLeft  :: (DualSession s1, DualSession s2)
-              => repr vid tf i o (st (s1 <++> s2)) ->                             repr vid tf i o (st s1)
+              => repr v tf i o (st (s1 <++> s2)) ->                           repr v tf i o (st s1)
   chooseRight :: (DualSession s1, DualSession s2)
-              => repr vid tf i o (st (s1 <++> s2)) ->                             repr vid tf i o (st s2)
+              => repr v tf i o (st (s1 <++> s2)) ->                           repr v tf i o (st s2)
   offer       :: (DualSession s1, DualSession s2)
-              => repr vid tf i h (st (s1 <&&> s2)) ->
-                   repr vid tf h o (st s1 -<> t) ->
-                     repr vid tf h o (st s2 -<> t) ->                             repr vid tf i o t
+              => repr v tf i h (st (s1 <&&> s2)) ->
+                   repr v tf h o (st s1 -<> t) ->
+                     repr v tf h o (st s2 -<> t) ->                           repr v tf i o t
 
 -- we can encode choice
 chooseLeft'
   :: (LLC repr, GV st repr, DualSession s1, DualSession s2)
-     => repr vid False i i (st ((st s1 + st s2) <!> EndOut) -<> st (Dual s1))
+     => repr v False i i (st ((st s1 + st s2) <!> EndOut) -<> st (Dual s1))
 chooseLeft' = llam (\m -> fork (llam (\x -> send (inl x) m)))
 
 type DefnGV st tf a =
-    forall repr i vid
+    forall repr i v
     . (LLC repr, GV st repr, MrgLs i)
-    => repr vid tf i i a
+    => repr v tf i i a
 defnGV :: DefnGV st tf a -> DefnGV st tf a
 defnGV x = x
 

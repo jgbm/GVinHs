@@ -18,7 +18,7 @@ import Prelude hiding((^), (<*>), (+))
 -- Evaluator
 --   i.e. a concrete representation which evaluates the LLC terms.
 --
-newtype R (vid::Nat) (tf::Bool) (hi::[Maybe Nat]) (ho::[Maybe Nat]) a = R {unR :: a}
+newtype R (v::Nat) (tf::Bool) (hi::[Maybe Nat]) (ho::[Maybe Nat]) a = R {unR :: a}
 
 instance LLC (R :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) where
     llam f = R $ Lolli $ \x -> unR (f (R x))
@@ -65,9 +65,9 @@ eval = unR
 newtype Mu a = Mu {unMu :: a (Mu a)}
 
 class LLCRec (repr :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) where
-    wrap :: (b -> a (Mu a)) -> repr vid tf i o b -> repr vid tf i o (Mu a)
-    unwrap :: (a (Mu a) -> b) -> repr vid tf i o (Mu a) -> repr vid tf i o b
-    fix :: ((forall vid h . repr vid False h h a) -> repr vid tf h h a) -> repr vid tf h h a
+    wrap :: (b -> a (Mu a)) -> repr v tf i o b -> repr v tf i o (Mu a)
+    unwrap :: (a (Mu a) -> b) -> repr v tf i o (Mu a) -> repr v tf i o b
+    fix :: ((forall v h . repr v False h h a) -> repr v tf h h a) -> repr v tf h h a
 
 instance LLCRec (R :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) where
     wrap f = R . Mu . f . unR
@@ -75,9 +75,9 @@ instance LLCRec (R :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) where
     fix f = f (R $ unR $ fix f)
 
 type DefnRec tf a =
-    forall repr i vid
+    forall repr i v
     . (LLCRec repr, LLC repr, MrgLs i)
-    => repr vid tf i i a
+    => repr v tf i i a
 defnRec :: DefnRec tf a -> DefnRec tf a
 defnRec x = x
 

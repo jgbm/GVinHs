@@ -38,21 +38,21 @@ data a + b = Inl a | Inr b
 data Zero
 newtype Base a = Base {unBase :: a}
 --
--- linear variable vid in Haskell context
+-- linear variable x in Haskell context
 --
-type LVar repr (vid::Nat) a =
+type LVar repr (x::Nat) a =
     forall (v::Nat)
            (i::[Maybe Nat])
            (o::[Maybe Nat])
-    . Consume vid i o => repr v False i o a
+    . Consume x i o => repr v False i o a
 
 --
 -- unrestricted variable in Haskell context
 --
 type UVar repr a =
-    forall (vid::Nat)
+    forall (v::Nat)
            (i::[Maybe Nat])
-    . repr vid False i i a
+    . repr v False i i a
 
 --
 -- The syntax of LLC.
@@ -66,112 +66,112 @@ class LLC (repr :: Nat
                ) where
   llam
     :: (VarOk tf var)
-    => (LVar repr vid a -> repr (S vid)
-                                  tf
-                                  (Just vid ': i)
-                                  (var ': o)
-                                  b
+    => (LVar repr v a -> repr (S v)
+                              tf
+                              (Just v ': i)
+                              (var ': o)
+                              b
        )
-    -> repr vid tf i o (a -<> b)
+    -> repr v tf i o (a -<> b)
   (^)
-    :: repr vid tf1 i h (a -<> b)
-    -> repr vid tf2 h o a
-    -> repr vid (Or tf1 tf2) i o b
+    :: repr v tf1 i h (a -<> b)
+    -> repr v tf2 h o a
+    -> repr v (Or tf1 tf2) i o b
 
   bang
-    :: repr vid tf '[] '[] a
-    -> repr vid False i i (Bang a)
+    :: repr v tf '[] '[] a
+    -> repr v False i i (Bang a)
   letBang
-    :: repr vid tf0 i h (Bang a)
-    -> (UVar repr a -> repr vid tf1 h o b)
-    -> repr vid (Or tf0 tf1) i o b
+    :: repr v tf0 i h (Bang a)
+    -> (UVar repr a -> repr v tf1 h o b)
+    -> repr v (Or tf0 tf1) i o b
 
   ulam
-    :: (UVar repr a -> repr vid tf i o b)
-    -> repr vid tf i o (a ->> b)
+    :: (UVar repr a -> repr v tf i o b)
+    -> repr v tf i o (a ->> b)
   ($$)
-    :: repr vid tf0 i o (a ->> b)
-    -> repr vid tf1 '[] '[] a
-    -> repr vid tf0 i o b
+    :: repr v tf0 i o (a ->> b)
+    -> repr v tf1 '[] '[] a
+    -> repr v tf0 i o b
 
   top
-    :: repr vid True i i Top
+    :: repr v True i i Top
 
   (&)
     :: ( MrgL h0 tf0 h1 tf1 o
        , And tf0 tf1 ~ tf
        )
-    => repr vid tf0 i h0 a
-    -> repr vid tf1 i h1 b
-    -> repr vid tf i o (a & b)
+    => repr v tf0 i h0 a
+    -> repr v tf1 i h1 b
+    -> repr v tf i o (a & b)
   pi1
-    :: repr vid tf i o (a & b)
-    -> repr vid tf i o a
+    :: repr v tf i o (a & b)
+    -> repr v tf i o a
   pi2
-    :: repr vid tf i o (a & b)
-    -> repr vid tf i o b
+    :: repr v tf i o (a & b)
+    -> repr v tf i o b
 
   one
-    :: repr vid False i i One
+    :: repr v False i i One
   letOne
-    :: repr vid tf0 i h One
-    -> repr vid tf1 h o a
-    -> repr vid (Or tf0 tf1) i o a
+    :: repr v tf0 i h One
+    -> repr v tf1 h o a
+    -> repr v (Or tf0 tf1) i o a
 
   (<*>)
-    :: repr vid tf0 i h a
-    -> repr vid tf1 h o b
-    -> repr vid (Or tf0 tf1) i o (a * b)
+    :: repr v tf0 i h a
+    -> repr v tf1 h o b
+    -> repr v (Or tf0 tf1) i o (a * b)
   letStar
     :: ( VarOk tf1 var0
        , VarOk tf1 var1
        )
-    => repr vid tf0 i h (a * b)
-    -> (LVar repr vid a
-        -> LVar repr (S vid) b
-        -> repr (S (S vid))
+    => repr v tf0 i h (a * b)
+    -> (LVar repr v a
+        -> LVar repr (S v) b
+        -> repr (S (S v))
                 tf1
-                (Just vid ': Just (S vid) ': h)
+                (Just v ': Just (S v) ': h)
                 (var0 ': var1 ': o)
                 c
        )
-    -> repr vid (Or tf0 tf1) i o c
+    -> repr v (Or tf0 tf1) i o c
 
   inl
-    :: repr vid tf i o a
-    -> repr vid tf i o (a + b)
+    :: repr v tf i o a
+    -> repr v tf i o (a + b)
   inr
-    :: repr vid tf i o b
-    -> repr vid tf i o (a + b)
+    :: repr v tf i o b
+    -> repr v tf i o (a + b)
   letPlus
     :: ( MrgL o1 tf1 o2 tf2 o
        , VarOk tf1 var1
        , VarOk tf2 var2
        )
-    => repr vid tf0 i h (a + b)
-    -> (LVar repr vid a -> repr (S vid)
-                                  tf1
-                                  (Just vid ': h)
-                                  (var1 ': o1)
-                                  c
+    => repr v tf0 i h (a + b)
+    -> (LVar repr v a -> repr (S v)
+                              tf1
+                              (Just v ': h)
+                              (var1 ': o1)
+                              c
        )
-    -> (LVar repr vid b -> repr (S vid)
-                                  tf2
-                                  (Just vid ': h)
-                                  (var2 ': o2)
-                                  c
+    -> (LVar repr v b -> repr (S v)
+                              tf2
+                              (Just v ': h)
+                              (var2 ': o2)
+                              c
        )
-    -> repr vid (Or tf0 (And tf1 tf2)) i o c
+    -> repr v (Or tf0 (And tf1 tf2)) i o c
 
   abort
-    :: repr vid tf i o Zero
-    -> repr vid True i o a
+    :: repr v tf i o Zero
+    -> repr v True i o a
 
-  constant :: a -> repr vid False i i (Base a)
+  constant :: a -> repr v False i i (Base a)
 
-  ($$$) :: repr vid tf i h (Base (a -> b))
-        -> repr vid tf h o (Base a)
-        -> repr vid tf i o (Base b)
+  ($$$) :: repr v tf i h (Base (a -> b))
+        -> repr v tf h o (Base a)
+        -> repr v tf i o (Base b)
 
 --
 -- A definition for a closed LLC term.
@@ -185,9 +185,9 @@ type MrgLs i = ( MrgL i False i False i
 --type MrgLs' i v v' = ( MrgL i v i v' i )
 
 type Defn tf a =
-    forall repr i vid v v'
+    forall repr i v
     . (LLC repr, MrgLs i)
-    => repr vid tf i i a
+    => repr v tf i i a
 defn :: Defn tf a -> Defn tf a
 defn x = x
 
@@ -277,12 +277,12 @@ instance VarOk False Nothing
 
 -- GHC 8.0.1 doesn't seem to be able to infer this type (GHC 7.10.3 can)
 llp :: (VarOk tf var, VarOk tf var0, VarOk tf var1, LLC repr) =>
-     (LVar repr ('S vid) a -> LVar repr ('S ('S vid)) b ->
-        repr ('S ('S ('S vid))) tf ('Just ('S vid) ': 'Just ('S ('S vid)) ': 'Nothing ': i) (var0 ': var1 ': var ': o) c) ->
-          repr vid tf i (o :: [Maybe Nat]) ((a * b) -<> c)
+     (LVar repr ('S v) a -> LVar repr ('S ('S v)) b ->
+        repr ('S ('S ('S v))) tf ('Just ('S v) ': 'Just ('S ('S v)) ': 'Nothing ': i) (var0 ': var1 ': var ': o) c) ->
+          repr v tf i (o :: [Maybe Nat]) ((a * b) -<> c)
 llp f = llam (\p -> letStar p f)
 llz f = llam (\z -> letOne z f)
 
 compose :: (LLC repr) =>
-           repr vid False i i ((b -<> c) -<> (a -<> b) -<> a -<> c)
+           repr v False i i ((b -<> c) -<> (a -<> b) -<> a -<> c)
 compose = llam (\g -> llam (\f -> llam (\x -> g ^ (f ^ x))))

@@ -28,8 +28,8 @@ import Data.Proxy
 -- representation for polarisation
 newtype RP (os :: * -> *) (is :: * -> *)
            (repr :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *)
-           (vid :: Nat) (tf::Bool) (hi::[Maybe Nat]) (ho::[Maybe Nat]) a =
-  RP {unRP :: (LLC repr, P.GV os is repr, Conv repr) => repr vid tf hi ho a}
+           (v :: Nat) (tf::Bool) (hi::[Maybe Nat]) (ho::[Maybe Nat]) a =
+  RP {unRP :: (LLC repr, P.GV os is repr, Conv repr) => repr v tf hi ho a}
 
 -- session type representation for polarisation
 data STP (os :: * -> *) (is :: * -> *) (s :: *) where
@@ -50,10 +50,10 @@ type instance Mon' I (STP os is s) = Mon (is (SToI s))
 
 -- conversion between GV and polarised GV representations
 class Conv (repr :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) where
-  stoo :: Pol s ~ O => repr vid tf hi ho (STP os is s) -> repr vid tf hi ho (os (SToO s))
-  stoi :: Pol s ~ I => repr vid tf hi ho (STP os is s) -> repr vid tf hi ho (is (SToI s))
-  otos :: Pol s ~ O => repr vid tf hi ho (os (SToO s)) -> repr vid tf hi ho (STP os is s)
-  itos :: Pol s ~ I => repr vid tf hi ho (is (SToI s)) -> repr vid tf hi ho (STP os is s)
+  stoo :: Pol s ~ O => repr v tf hi ho (STP os is s) -> repr v tf hi ho (os (SToO s))
+  stoi :: Pol s ~ I => repr v tf hi ho (STP os is s) -> repr v tf hi ho (is (SToI s))
+  otos :: Pol s ~ O => repr v tf hi ho (os (SToO s)) -> repr v tf hi ho (STP os is s)
+  itos :: Pol s ~ I => repr v tf hi ho (is (SToI s)) -> repr v tf hi ho (STP os is s)
 
 -- dualisation commutes with the transformations
 data DualTrans (s :: *) where
@@ -78,12 +78,12 @@ dualTrans (SOffer s1 s2) = case (dualTrans s1, dualTrans s2) of
 
 --- conversions with shifts where necessary
 otosShift :: (P.GV os is repr, Conv repr) =>
-               SPolarity s -> repr vid tf hi ho (os (SToO s)) -> repr vid tf hi ho (STP os is s)
+               SPolarity s -> repr v tf hi ho (os (SToO s)) -> repr v tf hi ho (STP os is s)
 otosShift SO = otos
 otosShift SI = itos . P.ish
 
 itosShift :: (P.GV os is repr, Conv repr) =>
-               SPolarity s -> repr vid tf hi ho (is (SToI s)) -> repr vid tf hi ho (STP os is s)
+               SPolarity s -> repr v tf hi ho (is (SToI s)) -> repr v tf hi ho (STP os is s)
 itosShift SO = otos . P.osh
 itosShift SI = itos
 
@@ -149,7 +149,7 @@ instance (LLC repr, P.GV os is repr, Conv repr) => GV (STP os is) (RP os is repr
   recv (RP m) = RP (letStar (P.recv (stoi m)) (\x y -> x <*> itosShift polarity y))
   wait (RP m) = RP (P.wait (stoi m))
   fork (RP (m :: (P.GV os is repr, Conv repr) =>
-                   repr vid tf i o (STP os is s -<> STP os is EndOut))) =
+                   repr v tf i o (STP os is s -<> STP os is EndOut))) =
     let m' = compose ^ llam stoo ^ (compose ^ m ^ (llam (\x -> otosShift polarity x))) in
     case (dualTrans (sing :: ST s), dualTrans (sing :: ST (Dual s))) of
       (DualTrans, DualTrans) ->
@@ -158,7 +158,7 @@ instance (LLC repr, P.GV os is repr, Conv repr) => GV (STP os is) (RP os is repr
     RP (otosShift polarity (P.chooseLeft (stoo m)))
   chooseRight (RP m) =
     RP (otosShift polarity (P.chooseRight (stoo m)))
-  offer (RP (m :: (P.GV os is repr, Conv repr) => repr vid tf i h (STP os is (s1 <&&> s2))))
+  offer (RP (m :: (P.GV os is repr, Conv repr) => repr v tf i h (STP os is (s1 <&&> s2))))
         (RP n1) (RP n2) =
     let m' = stoi m in
     let n1' = compose ^ n1 ^ llam (\x1 -> itosShift (polarity :: SPolarity s1) x1) in
@@ -167,8 +167,8 @@ instance (LLC repr, P.GV os is repr, Conv repr) => GV (STP os is) (RP os is repr
       (DualTrans, DualTrans) ->
         RP (P.offer m' n1' n2')
 
-evalPol :: (LLC repr, P.GV os is repr, Conv repr) => RP os is repr vid tf i o a -> repr vid tf i o a
+evalPol :: (LLC repr, P.GV os is repr, Conv repr) => RP os is repr v tf i o a -> repr v tf i o a
 evalPol (RP m) = m
 
-evalPolCont :: RP OST IST (RM (Cont r)) vid tf i o a -> RM (Cont r) vid tf i o a
+evalPolCont :: RP OST IST (RM (Cont r)) v tf i o a -> RM (Cont r) v tf i o a
 evalPolCont = evalPol

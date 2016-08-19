@@ -31,7 +31,7 @@ type instance Mon (Base a)  = MBase a
 --
 -- A monadic evaluator
 --
-newtype RM (m :: * -> *) (vid::Nat) (tf::Bool) (hi::[Maybe Nat]) (ho::[Maybe Nat]) a = RM {unRM :: m (Mon a m)}
+newtype RM (m :: * -> *) (v::Nat) (tf::Bool) (hi::[Maybe Nat]) (ho::[Maybe Nat]) a = RM {unRM :: m (Mon a m)}
 
 instance Monad m => LLC (RM m) where
     llam f = RM (return (MFun (\x -> unRM (f (RM (return x))))))
