@@ -22,17 +22,17 @@ import Language.GV
 
 data AP (s :: *)
 
-class (GV c repr) => GVX (ap :: * -> *) (c :: * -> *) (repr :: Nat -> Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) | repr -> c ap
-    where amb     :: repr v tf i o a -> repr v tf i o a -> repr v tf i o a
-          spawn   :: repr v tf i o (One -<> One  )      -> repr v tf i o One
-          close   :: repr v tf i o (c EndOut)           -> repr v tf i o One
-          new     :: repr v tf i o (ap s ->> t)         -> repr v tf i o t
-          accept  :: repr v tf i o (ap s)               -> repr v tf i o (c s)
-          request :: repr v tf i o (ap s)               -> repr v tf i o (c (Dual s))
+class (GV c repr) => GVX (ap :: * -> *) (c :: * -> *) (repr :: Bool -> [Maybe Nat] -> [Maybe Nat] -> * -> *) | repr -> c ap
+    where amb     :: repr tf i o a -> repr tf i o a -> repr tf i o a
+          spawn   :: repr tf i o (One -<> One  )    -> repr tf i o One
+          close   :: repr tf i o (c EndOut)         -> repr tf i o One
+          new     :: repr tf i o (ap s ->> t)       -> repr tf i o t
+          accept  :: repr tf i o (ap s)             -> repr tf i o (c s)
+          request :: repr tf i o (ap s)             -> repr tf i o (c (Dual s))
 
 type DefnGVX tf m c ap a =
-    forall repr i v
+    forall repr i
     . (LLC repr, GV c repr, GVX ap c repr, MrgLs i)
-    => repr v tf i i a
+    => repr tf i i a
 defnGVX :: DefnGVX tf m c ap a -> DefnGVX tf m c ap a
 defnGVX x = x

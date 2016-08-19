@@ -92,8 +92,8 @@ instance GV ST (RM (Cont r)) where
                                          MSum (Left  x1) -> runCont n1 (\(MFun f1) -> runCont (f1 x1) k)
                                          MSum (Right x2) -> runCont n2 (\(MFun f2) -> runCont (f2 x2) k)))))
 
-evalCont :: RM (Cont r) Z tf '[] '[] a -> (Mon a (Cont r) -> r) -> r
+evalCont :: RM (Cont r) tf '[] '[] a -> (Mon a (Cont r) -> r) -> r
 evalCont (RM m) = runCont m
 
-evalBase :: RM (Cont a) Z tf '[] '[] (Bang (Base a)) -> a
+evalBase :: RM (Cont a) tf '[] '[] (Bang (Base a)) -> a
 evalBase m = evalCont m (\(MBase x) -> x)
