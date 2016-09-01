@@ -5,8 +5,6 @@
   FlexibleInstances,
   FunctionalDependencies,
   MultiParamTypeClasses,
-  NoMonomorphismRestriction,
-  PolyKinds,
   RankNTypes,
   TypeFamilies,
   TypeOperators,
@@ -18,25 +16,25 @@
 module Language.LLC where
 
 import Prelude hiding((^), (<*>), (+))
+import Eq
 
 --
--- Linear types
+-- Linear type constructors
 --
-newtype a -<> b = Lolli {unLolli :: a -> b}
-infixr 5 -<>
-newtype a ->> b = Arrow {unArrow :: a -> b}
-infixr 5 ->>
-newtype Bang a = Bang {unBang :: a}
-type Top = ()
-type a & b = (a, b)
-data One = One
-  deriving Show
-data a * b = Tensor a b
-  deriving Show
-data a + b = Inl a | Inr b
-  deriving Show
+data a -<> b
+data a ->> b
+data Bang a
+data Top
+data a & b
+data One
+data a * b
+data a + b
 data Zero
-newtype Base a = Base {unBase :: a}
+data Base a
+
+infixr 5 -<>
+infixr 5 ->>
+
 --
 -- linear variable v in Haskell context
 --
@@ -44,7 +42,7 @@ type LVar repr (x::Nat) a =
     forall (v::Nat)
            (i::[Maybe Nat])
            (o::[Maybe Nat])
-    . (Consume x i o, v ~ Length i, v ~ Length o) => repr False i o a
+    . (Consume x i o, v ~ Length i) => repr False i o a
 
 --
 -- unrestricted variable in Haskell context
@@ -63,10 +61,10 @@ class LLC (repr :: Bool
                 -> *
                ) where
   llam
-    :: (VarOk tf var, v ~ Length i, v ~ Length o)
+    :: (VarOk tf x, v ~ Length i)
     => (LVar repr v a -> repr tf
                               (Just v ': i)
-                              (var ': o)
+                              (x ': o)
                               b
        )
     -> repr tf i o (a -<> b)
@@ -120,18 +118,16 @@ class LLC (repr :: Bool
     -> repr tf1 h o b
     -> repr (Or tf0 tf1) i o (a * b)
   letStar
-    :: ( VarOk tf1 var0
-       , VarOk tf1 var1
+    :: ( VarOk tf1 x
+       , VarOk tf1 y
        , v ~ Length i
--- breaks POLGV.hs as it doesn't know that Length i ~ Length o         
---       , v ~ Length o
        )
     => repr tf0 i h (a * b)
     -> (LVar repr v a
         -> LVar repr (S v) b
         -> repr tf1
                 (Just v ': Just (S v) ': h)
-                (var0 ': var1 ': o)
+                (     x ':          y ': o)
                 c
        )
     -> repr (Or tf0 tf1) i o c
@@ -144,20 +140,19 @@ class LLC (repr :: Bool
     -> repr tf i o (a + b)
   letPlus
     :: ( MrgL o1 tf1 o2 tf2 o
-       , VarOk tf1 var1
-       , VarOk tf2 var2
+       , VarOk tf1 x1
+       , VarOk tf2 x2
        , v ~ Length i
-       , v ~ Length o
        )
     => repr tf0 i h (a + b)
     -> (LVar repr v a -> repr tf1
                                 (Just v ': h)
-                                (var1 ': o1)
+                                (x1 ': o1)
                                 c
        )
     -> (LVar repr v b -> repr tf2
                                 (Just v ': h)
-                                (var2 ': o2)
+                                (x2 ': o2)
                                 c
        )
     -> repr (Or tf0 (And tf1 tf2)) i o c
@@ -197,9 +192,6 @@ Type level machinery
 
 ------------------------------------------------------}
 
---
--- We will use type level Nats, via DataKinds extension
---
 data Nat = Z | S Nat
 
 type family Length (xs :: [Maybe Nat]) :: Nat where
@@ -236,20 +228,11 @@ class Consume1 (b::Bool)
 instance (Consume v i o)
       => Consume v (Nothing ': i) (Nothing ': o)
 instance (EQ v x b, Consume1 b v x i o)
---instance (Consume1 (EQF v x) v x i o)
       => Consume v (Just x ': i) o
 
 instance Consume1 True v x i (Nothing ': i)
 instance (Consume v i o)
       => Consume1 False v x i (Just x ': o)
-
-class EQ (x::k) (y::k) (b::Bool) | x y -> b
-instance {-# OVERLAPPING #-} EQ x x True
-instance {-# OVERLAPPING #-} (b ~ False) => EQ x y b
-
-type family EQF (x::k) (y::k) :: Bool where
-  EQF x x = True
-  EQF x y = False
 
 --
 -- Type level machinery for merging outputs of
@@ -279,9 +262,12 @@ instance VarOk True Nothing
 instance VarOk False Nothing
 
 -- GHC 8.0.1 doesn't seem to be able to infer this type (GHC 7.10.3 can)
-llp :: (VarOk tf var, VarOk tf var0, VarOk tf var1, LLC repr, v ~ Length i, v ~ Length o) =>
+--
+-- This is a bug. Type inference with RankNTypes is broken in GHC 8.0.1.
+llp :: (VarOk tf x, VarOk tf y, VarOk tf Nothing, LLC repr, v ~ Length i) =>
      (LVar repr (S v) a -> LVar repr (S (S v)) b ->
-        repr tf ('Just (S v) ': 'Just (S (S v)) ': 'Nothing ': i) (var0 ': var1 ': var ': o) c) ->
+        repr tf (Just (S v) : Just (S (S v)) : Nothing : i)
+                (         x :              y : Nothing : o) c) ->
           repr tf i (o :: [Maybe Nat]) ((a * b) -<> c)
 llp f = llam (\p -> letStar p f)
 llz f = llam (\z -> letOne z f)
