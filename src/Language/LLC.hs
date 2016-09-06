@@ -261,9 +261,13 @@ instance VarOk True (Just v)
 instance VarOk True Nothing
 instance VarOk False Nothing
 
--- GHC 8.0.1 doesn't seem to be able to infer this type (GHC 7.10.3 can)
+-- GHC 8.0.1 cannot infer this type but GHC 7.10.3 can.
 --
--- This is a bug. Type inference with RankNTypes is broken in GHC 8.0.1.
+-- The bug is in GHC 7.10.3 which should not be able to infer this
+-- type without enabling ImpredicativeTypes.
+--
+-- Lambda-bound variables cannot be polymorphic unless they are
+-- specifically annotated as such - or ImpredicativeTypes is enabled.
 llp :: (VarOk tf x, VarOk tf y, VarOk tf Nothing, LLC repr, v ~ Length i) =>
      (LVar repr (S v) a -> LVar repr (S (S v)) b ->
         repr tf (Just (S v) : Just (S (S v)) : Nothing : i)

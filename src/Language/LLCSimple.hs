@@ -4,10 +4,11 @@
   FlexibleInstances,
   FunctionalDependencies,
   RankNTypes,
+  ScopedTypeVariables,
   TypeFamilies,
   TypeOperators,
   UndecidableInstances
- #-}
+#-}
 
 -- Based on Jeff Polakow, "Embedding a Full Linear Lambda Calculus in Haskell"
 
@@ -206,9 +207,13 @@ instance Consume1 True v x i (Nothing ': i)
 instance (Consume v i o)
       => Consume1 False v x i (Just x ': o)
 
--- GHC 8.0.1 doesn't seem to be able to infer this type (GHC 7.10.3 can)
+-- GHC 8.0.1 cannot infer this type but GHC 7.10.3 can.
 --
--- This is a bug. Type inference with RankNTypes is broken in GHC 8.0.1.
+-- The bug is in GHC 7.10.3 which should not be able to infer this
+-- type without enabling ImpredicativeTypes.
+--
+-- Lambda-bound variables cannot be polymorphic unless they are
+-- specifically annotated as such - or ImpredicativeTypes is enabled.
 llp :: (LLC repr, v ~ Length i) =>
      (LVar repr (S v) a -> LVar repr (S (S v)) b ->
         repr (Just (S v) : Just (S (S v)) : Nothing : i)
